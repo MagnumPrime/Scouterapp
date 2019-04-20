@@ -12,4 +12,13 @@ npm install
 
 # Build for Preview
 tns preview --bundle
+
+# Setup local ios/android build
+tns doctor 
+
+# Build for ios
+tns run ios --bundle
+
+# Build for android
+tns run android --bundle
 ```

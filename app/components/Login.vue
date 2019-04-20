@@ -24,6 +24,7 @@
 				</StackLayout>
 
 				<Button :text="isLoggingIn ? 'Log In' : 'Sign Up'" @tap="submit" class="btn btn-primary m-t-20" />
+        <Button v-show="isLoggingIn" :text="'\uf082'+' Facebook'" @tap="loginFacebook" class="fab btn btn-active" />
 				<Label v-show="isLoggingIn" text="Forgot your password?" class="login-label" @tap="forgotPassword" />
 			</StackLayout>
 
@@ -37,38 +38,80 @@
 	</Page>
 </template>
 <script>
-// A stub for a service that authenticates users.
+
+import Home from "./Home";
+import firebase from "nativescript-plugin-firebase";
 const userService = {
-  register(user) {
-    return Promise.resolve(user);
+  async register(user) {
+    return await firebase.createUser({
+      email: user.email,
+      password: user.password
+    });
   },
-  login(user) {
-    return Promise.resolve(user);
+  async loginFacebook(user) {
+    await firebase
+      .login({
+        type: firebase.LoginType.FACEBOOK,
+        facebookOptions: {
+          // full list: https://developers.facebook.com/docs/facebook-login/permissions/
+          scope: ["public_profile", "email"] // optional: defaults to ['public_profile', 'email']
+        }
+      })
+      .then(result => {
+        //console.log("Returned from firebase with result");
+        //console.dir(result);
+        return Promise.resolve(JSON.stringify(result));
+      })
+      .catch(error => {
+        console.error(error);
+        return Promise.reject(error);
+      });
   },
-  resetPassword(email) {
-    return Promise.resolve(email);
+  async login(user) {
+    return await firebase.login({
+      type: firebase.LoginType.PASSWORD,
+      passwordOptions: {
+        email: user.email,
+        password: user.password
+      }
+    });
+  },
+  async resetPassword(email) {
+    return await firebase.resetPassword({
+      email: email
+    });
   }
 };
-// A stub for the main page of your app. In a real app you’d put this page in its own .vue file.
-const HomePage = {
-  template: `
-	<Page>
-        <Label class="m-20" textWrap="true" text="You have successfully authenticated. This is where you build your core application functionality."></Label>
-	</Page>
-	`
-};
+const HomePage = Home;
+let LoadingIndicator = require("nativescript-loading-indicator")
+  .LoadingIndicator;
+let loader = new LoadingIndicator();
 export default {
   data() {
     return {
       isLoggingIn: true,
       user: {
-        email: "foo@foo.com",
-        password: "foo",
-        confirmPassword: "foo"
+        email: "test@test.com",
+        password: "tester",
+        confirmPassword: "tester"
       }
     };
   },
   methods: {
+    loginFacebook() {
+      //loader.show();//Don't use this for facebook logins, as the indicator covers the UI on IOS
+      userService
+        .loginFacebook(this.user)
+        .then(() => {
+          //loader.hide();
+          this.$navigateTo(HomePage);
+        })
+        .catch((err) => {
+          //loader.hide();
+          console.error(err);          
+          this.alert(err)
+        });
+    },
     toggleForm() {
       this.isLoggingIn = !this.isLoggingIn;
     },
@@ -77,6 +120,7 @@ export default {
         this.alert("Please provide both an email address and password.");
         return;
       }
+      loader.show();
       if (this.isLoggingIn) {
         this.login();
       } else {
@@ -87,25 +131,43 @@ export default {
       userService
         .login(this.user)
         .then(() => {
-          this.$navigateTo(HomePage);
+		  loader.hide();
+		  this.$navigateTo(HomePage);          
         })
-        .catch(() => {
-          this.alert("Unfortunately we could not find your account.");
+        .catch(err => {
+          console.error(err);
+          loader.hide();          
+          this.alert(err);
         });
     },
     register() {
+      let validator = require("email-validator");
+      if (!validator.validate(this.user.email)) {
+        loader.hide();
+        this.alert("Please enter a valid email address.");
+        return;
+      }
       if (this.user.password != this.user.confirmPassword) {
-        this.alert("Your passwords do not match.");
+        loader.hide();
+		this.alert("Your passwords do not match.");
+        return;
+      }
+      if (this.user.password.length < 6) {
+        loader.hide();
+		this.alert("Your password must at least 6 characters.");
         return;
       }
       userService
         .register(this.user)
         .then(() => {
-          this.alert("Your account was successfully created.");
+          loader.hide();
+		  this.alert("Your account was successfully created.");
           this.isLoggingIn = true;
         })
-        .catch(() => {
-          this.alert("Unfortunately we were unable to create your account.");
+        .catch(err => {
+          console.error(err);
+          loader.hide();
+          this.alert(err);
         });
     },
     forgotPassword() {
@@ -119,17 +181,18 @@ export default {
         cancelButtonText: "Cancel"
       }).then(data => {
         if (data.result) {
+          loader.show();
           userService
             .resetPassword(data.text.trim())
             .then(() => {
+              loader.hide();
               this.alert(
                 "Your password was successfully reset. Please check your email for instructions on choosing a new password."
               );
             })
             .catch(() => {
-              this.alert(
-                "Unfortunately, an error occurred resetting your password."
-              );
+              loader.hide();
+              this.alert(err);
             });
         }
       });
