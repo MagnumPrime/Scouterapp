@@ -11,8 +11,11 @@
 
 android {
   defaultConfig {
+    applicationId "scouter_app1.a01"
     minSdkVersion 17
+    targetSdkVersion 27
     generatedDensities = []
+    multiDexEnabled true
   }
   aaptOptions {
     additionalParameters "--no-version-vectors"
