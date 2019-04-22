@@ -8,3 +8,6 @@
 
 ## 1.2.0 - 04-21-2019
 - [Config] - Fixed Android local build
+
+## 1.3.0 - 04-22-2019
+- [Feature] - Login (Google)
