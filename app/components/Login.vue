@@ -25,6 +25,7 @@
 
 				<Button :text="isLoggingIn ? 'Log In' : 'Sign Up'" @tap="submit" class="btn btn-primary m-t-20" />
         <Button v-show="isLoggingIn" :text="'\uf082'+' Facebook'" @tap="loginFacebook" class="fab btn btn-active" />
+        <Button v-show="isLoggingIn" :text="'\uf1a0' +' Google' " @tap="loginGoogle" class="fab btn btn-active" />
 				<Label v-show="isLoggingIn" text="Forgot your password?" class="login-label" @tap="forgotPassword" />
 			</StackLayout>
 
@@ -47,6 +48,19 @@ const userService = {
       email: user.email,
       password: user.password
     });
+  },
+  async loginGoogle(user) {
+     await firebase
+      .login({
+        type: firebase.LoginType.GOOGLE       
+      })
+      .then(result => {
+        return Promise.resolve(JSON.stringify(result));
+      })
+      .catch(error => {
+        console.error(error);
+        return Promise.reject(error);
+      });
   },
   async loginFacebook(user) {
     await firebase
@@ -98,6 +112,20 @@ export default {
     };
   },
   methods: {
+     loginGoogle(){
+        //loader.show();//Don't use this for google logins, as the indicator covers the UI on IOS
+        userService
+        .loginGoogle(this.user)
+        .then((result) => {
+          //loader.hide();
+          this.$navigateTo(HomePage);          
+        })
+        .catch((error) => {
+          //loader.hide();
+          console.error(err);
+          this.alert(error)
+        });
+    },
     loginFacebook() {
       //loader.show();//Don't use this for facebook logins, as the indicator covers the UI on IOS
       userService

@@ -57,7 +57,17 @@
             <string>fb165188680697693</string>
         </array>
     </dict>
-</array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>REVERSED_CLIENT_ID</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.94372321364-v1gh2moa5lkevdqdfvq4ic5nvign274f</string>
+			</array>
+		</dict>
+	</array>
 <key>FacebookAppID</key>
 <string>165188680697693</string>
 <key>FacebookDisplayName</key>
